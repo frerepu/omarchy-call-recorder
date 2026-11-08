@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 Column {
   id: root
@@ -15,6 +16,10 @@ Column {
 
   width: parent ? parent.width : implicitWidth
   spacing: Style.space(5)
+
+  // Strings live in i18n/<code>.json beside the QML and are read live, so a
+  // language change under Setup > Language re-renders without a shell restart.
+  Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
 
   Row {
     width: parent.width
@@ -36,7 +41,11 @@ Column {
     Text {
       id: status
       textFormat: Text.PlainText
-      text: root.paused ? "PAUSED" : (root.muted ? "MUTED" : Math.round(root.level * 100) + "%")
+      text: root.paused
+              ? strings.t("meter.paused")
+              : (root.muted
+                   ? strings.t("meter.muted")
+                   : strings.t("meter.level").arg(Commons.I18n.formatNumber(Math.round(root.level * 100))))
       color: root.muted || root.paused ? Qt.darker(root.foreground, 1.45) : root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
@@ -60,9 +69,12 @@ Column {
       opacity: root.muted ? 0.35 : 1
       color: root.level > 0.92 ? root.urgent : root.foreground
 
-      Behavior on width { NumberAnimation { duration: 90; easing.type: Easing.OutQuad } }
-      Behavior on opacity { NumberAnimation { duration: 120 } }
-      Behavior on color { ColorAnimation { duration: 100 } }
+      // Durations go through Style.duration so they collapse to 0 when the user
+      // turns animations off with `omarchy toggle animations`, and the curve is
+      // an ease-out as the shell's motion guidance requires.
+      Behavior on width { NumberAnimation { duration: Style.duration(90); easing.type: Easing.OutCubic } }
+      Behavior on opacity { NumberAnimation { duration: Style.duration(120); easing.type: Easing.OutCubic } }
+      Behavior on color { ColorAnimation { duration: Style.duration(100); easing.type: Easing.OutCubic } }
     }
   }
 }

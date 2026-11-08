@@ -1,0 +1,27 @@
+{
+  "meter.paused": "PAUSED",
+  "meter.muted": "MUTED",
+  "meter.level": "%1%",
+
+  "panel.title": "Call recording",
+  "panel.meta.starting": "Starting",
+  "panel.meta.finalizing": "Preparing MP3 (%1%)",
+  "panel.meta.saving": "Saving recording",
+  "panel.meta.paused": "Paused",
+  "panel.meta.idle": "Microphone + desktop audio",
+
+  "panel.microphone": "Microphone",
+  "panel.desktopOutput": "Desktop output",
+  "panel.desktopAudio": "Desktop audio",
+
+  "panel.recordedLevels": "RECORDED LEVELS",
+  "panel.pause": "Pause",
+  "panel.resume": "Resume",
+  "panel.muteMic": "Mute mic",
+  "panel.unmuteMic": "Unmute mic",
+  "panel.muteDesktop": "Mute desktop",
+  "panel.unmuteDesktop": "Unmute desktop",
+  "panel.stopAndSave": "Stop and save",
+  "panel.tracksHint": "Separate FLAC tracks are saved while recording. The MP3 is prepared after stopping.",
+  "panel.shortcuts": "p pause · m microphone · d desktop · s stop"
+}

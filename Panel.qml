@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Panel {
@@ -15,6 +16,10 @@ Panel {
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.45)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+
+  // Strings live in i18n/<code>.json beside the QML. Every t() call stays inside
+  // a binding so switching language re-renders without a shell restart.
+  Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
 
   Binding {
     target: root.service
@@ -117,14 +122,15 @@ Panel {
           PanelHero {
             id: hero
             width: parent.width
-            title: "Call recording"
+            title: strings.t("panel.title")
             meta: {
-              if (!root.service) return "Starting"
-              if (root.service.finalizing) return "Preparing MP3 (" + root.service.exportProgress + "%)"
-              if (root.service.stopping) return "Saving recording"
-              if (root.service.paused) return "Paused"
-              if (root.service.starting) return "Starting"
-              return "Microphone + desktop audio"
+              if (!root.service) return strings.t("panel.meta.starting")
+              if (root.service.finalizing)
+                return strings.t("panel.meta.finalizing").arg(Commons.I18n.formatNumber(root.service.exportProgress))
+              if (root.service.stopping) return strings.t("panel.meta.saving")
+              if (root.service.paused) return strings.t("panel.meta.paused")
+              if (root.service.starting) return strings.t("panel.meta.starting")
+              return strings.t("panel.meta.idle")
             }
             detail: root.service ? root.service.formatElapsed(root.service.elapsedSeconds) : "00:00"
             foreground: root.foreground
@@ -147,7 +153,7 @@ Panel {
         Dropdown {
           id: microphonePicker
           width: parent.width
-          label: "Microphone"
+          label: strings.t("panel.microphone")
           value: root.service ? root.service.currentMicrophone : ""
           options: root.service ? root.service.microphones : []
           foreground: root.foreground
@@ -158,7 +164,7 @@ Panel {
         Dropdown {
           id: desktopPicker
           width: parent.width
-          label: "Desktop output"
+          label: strings.t("panel.desktopOutput")
           value: root.configuredDesktopOutput
           options: root.service ? root.service.desktopOutputOptions : []
           foreground: root.foreground
@@ -179,13 +185,13 @@ Panel {
         PanelSeparator { foreground: root.foreground }
 
         PanelSectionHeader {
-          text: "RECORDED LEVELS"
+          text: strings.t("panel.recordedLevels")
           foreground: root.foreground
           fontFamily: root.fontFamily
         }
 
         LevelMeter {
-          label: "Microphone"
+          label: strings.t("panel.microphone")
           level: root.service ? root.service.microphoneLevel : 0
           muted: root.service ? root.service.microphoneMuted : false
           paused: root.service ? root.service.paused : false
@@ -195,7 +201,7 @@ Panel {
         }
 
         LevelMeter {
-          label: "Desktop audio"
+          label: strings.t("panel.desktopAudio")
           level: root.service ? root.service.desktopLevel : 0
           muted: root.service ? root.service.desktopMuted : false
           paused: root.service ? root.service.paused : false
@@ -212,7 +218,7 @@ Panel {
 
           Button {
             width: (parent.width - parent.spacing) / 2
-            text: root.service && root.service.paused ? "Resume" : "Pause"
+            text: strings.t(root.service && root.service.paused ? "panel.resume" : "panel.pause")
             iconText: root.service && root.service.paused ? "" : ""
             bordered: true
             foreground: root.foreground
@@ -222,7 +228,7 @@ Panel {
 
           Button {
             width: (parent.width - parent.spacing) / 2
-            text: root.service && root.service.microphoneMuted ? "Unmute mic" : "Mute mic"
+            text: strings.t(root.service && root.service.microphoneMuted ? "panel.unmuteMic" : "panel.muteMic")
             iconText: root.service && root.service.microphoneMuted ? "" : ""
             selected: root.service ? root.service.microphoneMuted : false
             bordered: true
@@ -238,7 +244,7 @@ Panel {
 
           Button {
             width: (parent.width - parent.spacing) / 2
-            text: root.service && root.service.desktopMuted ? "Unmute desktop" : "Mute desktop"
+            text: strings.t(root.service && root.service.desktopMuted ? "panel.unmuteDesktop" : "panel.muteDesktop")
             iconText: root.service && root.service.desktopMuted ? "󰖁" : "󰕾"
             selected: root.service ? root.service.desktopMuted : false
             bordered: true
@@ -249,7 +255,7 @@ Panel {
 
           Button {
             width: (parent.width - parent.spacing) / 2
-            text: "Stop and save"
+            text: strings.t("panel.stopAndSave")
             iconText: ""
             bordered: true
             foreground: root.urgent
@@ -272,7 +278,7 @@ Panel {
         Text {
           width: parent.width
           visible: root.service && root.service.recording
-          text: "Separate FLAC tracks are saved while recording. The MP3 is prepared after stopping."
+          text: strings.t("panel.tracksHint")
           textFormat: Text.PlainText
           color: root.dim
           font.family: root.fontFamily
@@ -293,7 +299,7 @@ Panel {
 
         Text {
           width: parent.width
-          text: "p pause · m microphone · d desktop · s stop"
+          text: strings.t("panel.shortcuts")
           textFormat: Text.PlainText
           color: root.dim
           font.family: root.fontFamily
