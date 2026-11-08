@@ -93,20 +93,30 @@ Panel {
     if (!visible && opened) close()
   }
 
-  visible: service ? service.visibleInBar : false
+  // Shown whenever the plugin is loaded, so the recorder is reachable without
+  // remembering the keybind. BarIconButton.active dims it while idle, which is
+  // how the bar's other widgets distinguish a live state from a resting one.
+  visible: service !== null
   implicitWidth: visible ? button.implicitWidth : 0
   implicitHeight: visible ? button.implicitHeight : 0
+
+  readonly property bool recordingActive: service ? service.active : false
 
   BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.service && root.service.paused ? "" : ""
-    active: true
-    tooltipText: root.service
-      ? (root.service.paused ? "Call recording paused" : "Call recording")
-        + " · " + root.service.formatElapsed(root.service.elapsedSeconds)
-      : "Call recording"
+    text: {
+      if (!root.recordingActive) return ""
+      return root.service && root.service.paused ? "" : ""
+    }
+    active: root.recordingActive
+    tooltipText: {
+      if (!root.service) return strings.t("tooltip.idle")
+      if (!root.recordingActive) return strings.t("tooltip.idle")
+      var label = strings.t(root.service.paused ? "tooltip.paused" : "tooltip.recording")
+      return label + " · " + root.service.formatElapsed(root.service.elapsedSeconds)
+    }
     onPressed: root.toggle()
   }
 
@@ -141,7 +151,9 @@ Panel {
           id: heroHost
           width: parent.width
           implicitHeight: hero.implicitHeight
-          readonly property color iconColor: root.service && root.service.paused ? root.dim : root.urgent
+          readonly property color iconColor: !root.recordingActive || (root.service && root.service.paused)
+            ? root.dim
+            : root.urgent
 
           PanelHero {
             id: hero
@@ -162,7 +174,10 @@ Panel {
             iconComponent: Component {
               Text {
                 textFormat: Text.PlainText
-                text: root.service && root.service.paused ? "" : ""
+                text: {
+                  if (!root.recordingActive) return ""
+                  return root.service && root.service.paused ? "" : ""
+                }
                 color: heroHost.iconColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.display
@@ -279,12 +294,26 @@ Panel {
 
           Button {
             width: (parent.width - parent.spacing) / 2
+            visible: root.recordingActive
             text: strings.t("panel.stopAndSave")
-            iconText: ""
+            iconText: ""
             bordered: true
             foreground: root.urgent
             fontFamily: root.fontFamily
             onClicked: if (root.service) root.service.stopRecording()
+          }
+
+          // The panel is reachable while idle now, so it needs its own way to
+          // begin a take rather than only offering controls for one in flight.
+          Button {
+            width: (parent.width - parent.spacing) / 2
+            visible: !root.recordingActive
+            text: strings.t("panel.startRecording")
+            iconText: ""
+            bordered: true
+            foreground: root.urgent
+            fontFamily: root.fontFamily
+            onClicked: if (root.service) root.service.startRecording()
           }
         }
 

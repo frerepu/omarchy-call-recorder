@@ -64,7 +64,9 @@ Item {
   property double recordedMs: 0
   property double segmentStartedMs: 0
 
-  readonly property bool visibleInBar: starting || recording || stopping
+  // A take is in flight. The bar icon is always shown now, so this is no longer
+  // about visibility: it gates the elapsed-time ticker and the IPC state.
+  readonly property bool active: starting || recording || stopping
   readonly property int elapsedSeconds: Math.max(0, Math.floor((recordedMs
     + (recording && !paused && !stopping && segmentStartedMs > 0
       ? clockNowMs - segmentStartedMs : 0)) / 1000))
@@ -341,10 +343,10 @@ Item {
     function muteDesktop(value: string): void { root.setDesktopMuted(root.boolValue(value)) }
     function microphone(name: string): void { root.setMicrophone(name) }
     function desktopOutput(name: string): void { root.setDesktopOutput(name) }
-    function isActive(): string { return root.visibleInBar ? "true" : "false" }
+    function isActive(): string { return root.active ? "true" : "false" }
     function state(): string {
       return JSON.stringify({
-        active: root.visibleInBar,
+        active: root.active,
         recording: root.recording,
         paused: root.paused,
         stopping: root.stopping,
@@ -416,7 +418,7 @@ Item {
   Timer {
     interval: 500
     repeat: true
-    running: root.visibleInBar
+    running: root.active
     onTriggered: root.clockNowMs = Date.now()
   }
 

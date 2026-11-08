@@ -18,11 +18,15 @@
   "panel.recordedLevels": "RECORDED LEVELS",
   "panel.resume": "Resume",
   "panel.shortcuts": "p pause · m microphone · d desktop · s stop",
+  "panel.startRecording": "Start recording",
   "panel.stopAndSave": "Stop and save",
   "panel.title": "Call recording",
   "panel.tracksHint": "Separate FLAC tracks are saved while recording. The MP3 is prepared after stopping.",
   "panel.unmuteDesktop": "Unmute desktop",
   "panel.unmuteMic": "Unmute mic",
   "settings.nagMinutes": "Reminder interval (minutes)",
-  "settings.recordingDirectory": "Recording folder"
+  "settings.recordingDirectory": "Recording folder",
+  "tooltip.idle": "Call recorder",
+  "tooltip.paused": "Call recording paused",
+  "tooltip.recording": "Call recording"
 }
