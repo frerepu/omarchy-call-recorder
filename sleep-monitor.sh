@@ -27,24 +27,6 @@ ACK_TOKEN="ack"
 ACK_TIMEOUT_S="${CALL_RECORDER_ACK_TIMEOUT_S:-5}"
 RETRY_S=5
 
-# Quickshell kills only its direct child when a plugin unloads, so without this
-# the monitor, its gdbus and its inhibitor would outlive the plugin. setsid
-# makes $$ the process-group id; the watcher kills the whole group once stdin
-# closes, which is exactly when the owning Process goes away.
-#
-# The watcher also relays the panel's ack into an anonymous pipe opened
-# read-write, so it never blocks and never reaches EOF. systemd-inhibit passes
-# stdin through but closes other descriptors, so the pipe is what each inhibited
-# wait reads as its stdin.
-exec 4<> <(:)
-
-(
-  while IFS= read -r line; do
-    [ "$line" = "$ACK_TOKEN" ] && printf '%s\n' "$ACK_TOKEN" >&4
-  done
-  kill -KILL -- "-$$"
-) <&0 &
-
 wait_for_sleep() {
   # -u so a match leaves sed as soon as it is read instead of sitting in a block
   # buffer until after the machine has already suspended.
@@ -69,11 +51,32 @@ wait_for_sleep() {
   exit 0
 }
 
+# The inhibited child must short-circuit here, before any of the parent-only
+# setup below. Doing this after the ack pipe and watcher were created meant each
+# child built its own pipe and spawned a watcher that read the parent's ack pipe,
+# swallowing the ack the wait above depends on. Its stdin is already the ack
+# pipe, handed over by the parent's redirect.
 if [ "${1:-}" = "--wait-once" ]; then
   wait_for_sleep
 fi
 
-export -f wait_for_sleep 2>/dev/null || true
+# Quickshell kills only its direct child when a plugin unloads, so without this
+# the monitor, its gdbus and its inhibitor would outlive the plugin. setsid
+# makes $$ the process-group id; the watcher kills the whole group once stdin
+# closes, which is exactly when the owning Process goes away.
+#
+# The watcher also relays the panel's ack into an anonymous pipe opened
+# read-write, so it never blocks and never reaches EOF. systemd-inhibit passes
+# stdin through but closes other descriptors, so the pipe is what each inhibited
+# wait reads as its stdin.
+exec 4<> <(:)
+
+(
+  while IFS= read -r line; do
+    [ "$line" = "$ACK_TOKEN" ] && printf '%s\n' "$ACK_TOKEN" >&4
+  done
+  kill -KILL -- "-$$"
+) <&0 &
 
 while :; do
   if ! command -v gdbus >/dev/null 2>&1 || ! command -v systemd-inhibit >/dev/null 2>&1; then
