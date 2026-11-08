@@ -14,6 +14,7 @@ Panel {
   readonly property string configuredDesktopOutput: String(setting("desktopOutput", "") || "")
   readonly property string configuredRecordingDirectory: String(setting("recordingDirectory", "") || "")
   readonly property int configuredNagMinutes: Number(setting("nagMinutes", 15))
+  readonly property bool configuredStopOnSuspend: setting("stopOnSuspend", true) !== false
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.45)
@@ -48,6 +49,13 @@ Panel {
     target: root.service
     property: "nagMinutes"
     value: root.configuredNagMinutes
+    when: root.service !== null
+  }
+
+  Binding {
+    target: root.service
+    property: "stopOnSuspend"
+    value: root.configuredStopOnSuspend
     when: root.service !== null
   }
 

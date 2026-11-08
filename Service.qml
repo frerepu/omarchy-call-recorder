@@ -21,6 +21,12 @@ Item {
   property string recordingDirectory: ""
   // Remind every N minutes that a take is still running. 0 disables.
   property int nagMinutes: 15
+  // Stop a running take before the machine suspends, so the FLAC files are
+  // flushed and closed rather than truncated.
+  property bool stopOnSuspend: true
+  // Set while the sleep monitor is holding a delay inhibitor, waiting for the
+  // pipeline to stop before it lets the machine suspend.
+  property bool awaitingSleepAck: false
   property var microphones: []
   property var desktopOutputs: []
   property string defaultMicrophone: ""
@@ -434,5 +440,46 @@ Item {
       strings.t("notification.stillRecording.body", { minutes: root.elapsedSeconds >= 60 ? Math.floor(root.elapsedSeconds / 60) : 0 }),
       "-t", "6000"
     ])
+  }
+
+  // A suspend with a take running would freeze the pipeline mid-file. The
+  // monitor holds a logind delay inhibitor and waits for the ack written below,
+  // so the recording is closed first. See sleep-monitor.sh for the protocol.
+  Process {
+    id: sleepMonitor
+    running: root.stopOnSuspend
+    stdinEnabled: true
+    command: ["setsid", "bash", Qt.resolvedUrl("sleep-monitor.sh").toString().replace(/^file:\/\//, "")]
+    stdout: SplitParser {
+      onRead: function(line) {
+        if (String(line || "").trim() !== "sleep") return
+        root.handleSuspendImminent()
+      }
+    }
+  }
+
+  function handleSuspendImminent() {
+    // Nothing to protect: release the inhibitor at once so suspend is not
+    // delayed by a machine that happens to have the plugin loaded.
+    if (!recording && !starting && !recorderProc.running) {
+      sleepMonitor.write("ack\n")
+      return
+    }
+    awaitingSleepAck = true
+    stopRecording()
+  }
+
+  // Ack on the pipeline stopping, never on the export finishing: the export
+  // outlives logind's window and resumes after wake, while an unflushed FLAC
+  // cannot be recovered.
+  Timer {
+    interval: 100
+    repeat: true
+    running: root.awaitingSleepAck
+    onTriggered: {
+      if (root.recording || root.starting || recorderProc.running) return
+      root.awaitingSleepAck = false
+      sleepMonitor.write("ack\n")
+    }
   }
 }

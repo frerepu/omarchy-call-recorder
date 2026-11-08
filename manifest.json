@@ -25,7 +25,8 @@
       "microphone": "",
       "desktopOutput": "",
       "recordingDirectory": "",
-      "nagMinutes": 15
+      "nagMinutes": 15,
+      "stopOnSuspend": true
     },
     "schema": [
       {
@@ -48,6 +49,13 @@
         "label": "Recording folder",
         "defaultValue": "",
         "description": "Parent folder for dated recordings. Leave empty for ~/Music/Recordings."
+      },
+      {
+        "key": "stopOnSuspend",
+        "type": "bool",
+        "label": "Stop recording before sleep",
+        "defaultValue": true,
+        "description": "Close the recording files before the machine suspends, so a forgotten take is not truncated."
       },
       {
         "key": "nagMinutes",
