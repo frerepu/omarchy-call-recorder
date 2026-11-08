@@ -107,8 +107,8 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: {
-      if (!root.recordingActive) return ""
-      return root.service && root.service.paused ? "" : ""
+      if (!root.recordingActive) return ""
+      return root.service && root.service.paused ? "" : ""
     }
     active: root.recordingActive
     tooltipText: {
@@ -175,8 +175,8 @@ Panel {
               Text {
                 textFormat: Text.PlainText
                 text: {
-                  if (!root.recordingActive) return ""
-                  return root.service && root.service.paused ? "" : ""
+                  if (!root.recordingActive) return ""
+                  return root.service && root.service.paused ? "" : ""
                 }
                 color: heroHost.iconColor
                 font.family: root.fontFamily
@@ -296,7 +296,7 @@ Panel {
             width: (parent.width - parent.spacing) / 2
             visible: root.recordingActive
             text: strings.t("panel.stopAndSave")
-            iconText: ""
+            iconText: ""
             bordered: true
             foreground: root.urgent
             fontFamily: root.fontFamily
@@ -309,7 +309,7 @@ Panel {
             width: (parent.width - parent.spacing) / 2
             visible: !root.recordingActive
             text: strings.t("panel.startRecording")
-            iconText: ""
+            iconText: ""
             bordered: true
             foreground: root.urgent
             fontFamily: root.fontFamily
