@@ -113,9 +113,12 @@ def artifact_paths(output_path, *, grouped=False):
     }
 
 
-def choose_output_path(explicit_path):
+def choose_output_path(explicit_path, output_directory=""):
     if not explicit_path:
-        directory = Path.home() / "Music" / "Recordings"
+        # The dated-folder layout is unchanged; only its root is configurable, so
+        # recordings can land in a synced directory the transcription pipeline
+        # watches instead of ~/Music.
+        directory = Path(output_directory).expanduser() if output_directory else Path.home() / "Music" / "Recordings"
         directory.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         for index in range(1, 1000):
@@ -186,7 +189,7 @@ def capture_branch(source, name, output):
 
 
 class Recorder:
-    def __init__(self, microphone, desktop_output, output_file):
+    def __init__(self, microphone, desktop_output, output_file, output_dir=""):
         self.devices = audio_devices()
         available = {item["value"] for item in self.devices["microphones"]}
         self.microphone = microphone if microphone in available else self.devices["default_microphone"]
@@ -201,7 +204,7 @@ class Recorder:
         if not self.desktop_source:
             raise RuntimeError("No desktop audio source is available")
 
-        self.output_file = choose_output_path(output_file)
+        self.output_file = choose_output_path(output_file, output_dir)
         self.artifacts = artifact_paths(self.output_file, grouped=not output_file)
         self.loop = GLib.MainLoop()
         self.pipeline = None
@@ -657,7 +660,7 @@ class Recorder:
 def record(args):
     recorder = None
     try:
-        recorder = Recorder(args.microphone, args.desktop_output, args.output_file)
+        recorder = Recorder(args.microphone, args.desktop_output, args.output_file, args.output_dir)
 
         def request_stop(_signum, _frame):
             if recorder and recorder.loop:
@@ -684,6 +687,10 @@ def main():
     record_parser.add_argument(
         "--output-file", default="",
         help="Use an explicit MP3 path instead of a dated recording folder",
+    )
+    record_parser.add_argument(
+        "--output-dir", default="",
+        help="Parent directory for the dated recording folder (default ~/Music/Recordings)",
     )
     args = parser.parse_args()
 

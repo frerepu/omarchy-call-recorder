@@ -23,7 +23,9 @@
     "defaultSection": "right",
     "defaults": {
       "microphone": "",
-      "desktopOutput": ""
+      "desktopOutput": "",
+      "recordingDirectory": "",
+      "nagMinutes": 15
     },
     "schema": [
       {
@@ -39,6 +41,20 @@
         "label": "Desktop output",
         "defaultValue": "",
         "description": "Leave empty to follow the system output while recording."
+      },
+      {
+        "key": "recordingDirectory",
+        "type": "string",
+        "label": "Recording folder",
+        "defaultValue": "",
+        "description": "Parent folder for dated recordings. Leave empty for ~/Music/Recordings."
+      },
+      {
+        "key": "nagMinutes",
+        "type": "int",
+        "label": "Reminder interval (minutes)",
+        "defaultValue": 15,
+        "description": "Notify every N minutes while recording. Set 0 to disable."
       }
     ]
   }

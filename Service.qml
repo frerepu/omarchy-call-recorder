@@ -1,9 +1,13 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.Commons as Commons
 
 Item {
   id: root
+
+  // Notification text is user-visible, so it comes from i18n/<code>.json too.
+  Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
 
   property var shell: null
   property var manifest: null
@@ -13,6 +17,10 @@ Item {
 
   property string preferredMicrophone: ""
   property string preferredDesktopOutput: ""
+  // Parent folder for dated recordings; empty keeps the backend default.
+  property string recordingDirectory: ""
+  // Remind every N minutes that a take is still running. 0 disables.
+  property int nagMinutes: 15
   property var microphones: []
   property var desktopOutputs: []
   property string defaultMicrophone: ""
@@ -107,6 +115,15 @@ Item {
     if (shell) shell.summon(pluginId)
   }
 
+  // One keybind for the whole cycle: start when idle, stop when a take is live.
+  function toggleRecording() {
+    if (starting || recording || stopping || recorderProc.running) {
+      stopRecording()
+      return "stopping"
+    }
+    return startRecording()
+  }
+
   function startRecording() {
     if (starting || recording || stopping || recorderProc.running) {
       openPanel()
@@ -117,6 +134,7 @@ Item {
     var args = [backendPath, "record"]
     if (selected !== "") args.push("--microphone", selected)
     if (preferredDesktopOutput !== "") args.push("--desktop-output", preferredDesktopOutput)
+    if (recordingDirectory !== "") args.push("--output-dir", recordingDirectory)
 
     errorText = ""
     outputPath = ""
@@ -308,6 +326,7 @@ Item {
     target: "illegalstudio.omarchy-call-recorder"
 
     function start(): string { return root.startRecording() }
+    function toggle(): string { return root.toggleRecording() }
     function open(): void { root.openPanel() }
     function stop(): void { root.stopRecording() }
     function pause(): void { if (!root.paused) root.togglePause() }
@@ -401,5 +420,19 @@ Item {
     running: true
     triggeredOnStart: true
     onTriggered: root.refreshDevices()
+  }
+
+  // Long meetings are easy to forget about; a periodic reminder keeps a
+  // forgotten take from filling the disk. Paused takes stay quiet.
+  Timer {
+    interval: Math.max(1, root.nagMinutes) * 60000
+    repeat: true
+    running: root.nagMinutes > 0 && root.recording && !root.paused
+    onTriggered: Quickshell.execDetached([
+      "omarchy-notification-send",
+      strings.t("notification.stillRecording.title"),
+      strings.t("notification.stillRecording.body", { minutes: root.elapsedSeconds >= 60 ? Math.floor(root.elapsedSeconds / 60) : 0 }),
+      "-t", "6000"
+    ])
   }
 }
