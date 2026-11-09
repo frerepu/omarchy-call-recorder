@@ -166,6 +166,7 @@ Panel {
         else if (text === "m" || text === "M") root.toggleMicrophoneMute()
         else if (text === "d" || text === "D") root.toggleDesktopMute()
         else if ((text === "s" || text === "S") && root.service) root.service.stopRecording()
+        else if (text === "g" || text === "G") root.settingsOpen = !root.settingsOpen
       }
 
       Column {
@@ -207,7 +208,11 @@ Panel {
               if (root.service.starting) return strings.t("panel.meta.starting")
               return strings.t("panel.meta.idle")
             }
-            detail: root.service ? root.service.formatElapsed(root.service.elapsedSeconds) : "00:00"
+            // Without the idle branch the panel keeps showing the finished take's
+            // length, which reads as a run still in progress.
+            detail: root.service && root.recordingActive
+              ? root.service.formatElapsed(root.service.elapsedSeconds)
+              : "00:00"
             foreground: root.foreground
             fontFamily: root.fontFamily
             iconComponent: Component {
