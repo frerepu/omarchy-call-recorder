@@ -33,8 +33,6 @@ Item {
   property string defaultDesktopOutput: ""
   property string desktopSource: ""
   property string desktopLabel: "Default output"
-  readonly property var desktopOutputOptions: [{ value: "", label: "Follow system output" }]
-    .concat(desktopOutputs || [])
 
   property bool starting: false
   property bool recording: false

@@ -29,6 +29,14 @@ Panel {
   readonly property string effectiveRecordingDirectory: root.configuredRecordingDirectory !== ""
     ? root.configuredRecordingDirectory
     : root.defaultRecordingDirectory
+  // The desktop list carries a row for "use whatever the system picks" but the
+  // microphone list never did, so an unset microphone matched no row and the
+  // dropdown rendered blank. Both default rows are built here so their labels
+  // go through i18n instead of sitting hardcoded in the service.
+  readonly property var microphoneOptions: [{ value: "", label: strings.t("panel.defaultMicrophone") }]
+    .concat(service ? (service.microphones || []) : [])
+  readonly property var desktopOutputOptions: [{ value: "", label: strings.t("panel.followSystemOutput") }]
+    .concat(service ? (service.desktopOutputs || []) : [])
   readonly property var recordingDirectoryOptions: {
     var options = [root.defaultRecordingDirectory,
                    root.homeDirectory + "/Documents/Recordings",
@@ -235,7 +243,7 @@ Panel {
           width: parent.width
           label: strings.t("panel.microphone")
           value: root.service ? root.service.currentMicrophone : ""
-          options: root.service ? root.service.microphones : []
+          options: root.microphoneOptions
           foreground: root.foreground
           fontFamily: root.fontFamily
           onChanged: function(value) { root.selectMicrophone(value) }
@@ -246,7 +254,7 @@ Panel {
           width: parent.width
           label: strings.t("panel.desktopOutput")
           value: root.configuredDesktopOutput
-          options: root.service ? root.service.desktopOutputOptions : []
+          options: root.desktopOutputOptions
           foreground: root.foreground
           fontFamily: root.fontFamily
           onChanged: function(value) { root.selectDesktopOutput(value) }
