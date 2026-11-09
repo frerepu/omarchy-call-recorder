@@ -188,7 +188,7 @@ Panel {
             anchors.top: parent.top
             z: 1
             iconText: ""
-            tooltipText: strings.t("panel.settings")
+            tooltipText: strings.t("tooltip.settings")
             foreground: root.settingsOpen ? root.foreground : root.dim
             fontFamily: root.fontFamily
             onClicked: root.settingsOpen = !root.settingsOpen
