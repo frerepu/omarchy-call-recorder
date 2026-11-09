@@ -22,7 +22,7 @@
   "panel.recordingFolderHint": "New recordings are saved here. The folder is created if it does not exist.",
   "panel.resume": "Resume",
   "panel.settings": "SETTINGS",
-  "panel.shortcuts": "p pause · m microphone · d desktop · s stop",
+  "panel.shortcuts": "p pause · m microphone · d desktop · s stop · g settings",
   "panel.startRecording": "Start recording",
   "panel.stopAndSave": "Stop and save",
   "panel.title": "Call recording",
