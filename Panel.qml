@@ -20,6 +20,27 @@ Panel {
   readonly property color dim: Qt.darker(foreground, 1.45)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
+  // Cogwheel state. The folder list is built from $HOME rather than hardcoded
+  // so it follows the user, and the recorder creates the directory on first
+  // use, so an entry that does not exist yet is still a valid choice.
+  property bool settingsOpen: false
+  readonly property string homeDirectory: String(Quickshell.env("HOME") || "")
+  readonly property string defaultRecordingDirectory: root.homeDirectory + "/Music/Recordings"
+  readonly property string effectiveRecordingDirectory: root.configuredRecordingDirectory !== ""
+    ? root.configuredRecordingDirectory
+    : root.defaultRecordingDirectory
+  readonly property var recordingDirectoryOptions: {
+    var options = [root.defaultRecordingDirectory,
+                   root.homeDirectory + "/Documents/Recordings",
+                   root.homeDirectory + "/Videos/Recordings",
+                   root.homeDirectory + "/Nextcloud/Recordings"]
+    // A folder set outside the panel would otherwise have no matching row and
+    // the dropdown would render blank.
+    if (options.indexOf(root.effectiveRecordingDirectory) === -1)
+      options.unshift(root.effectiveRecordingDirectory)
+    return options
+  }
+
   // Strings live in i18n/<code>.json beside the QML. Every t() call stays inside
   // a binding so switching language re-renders without a shell restart.
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
@@ -66,6 +87,14 @@ Panel {
     if (service) service.setMicrophone(name)
   }
 
+  function selectRecordingDirectory(path) {
+    var next = Object.assign({}, settings, { recordingDirectory: String(path || "") })
+    settings = next
+    if (bar && bar.shell) bar.shell.updateEntryInline(moduleName, next)
+    // The recordingDirectory Binding carries the change to the service, so the
+    // next take lands in the new folder without restarting the shell.
+  }
+
   function togglePause() {
     if (service) service.togglePause()
   }
@@ -106,10 +135,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: {
-      if (!root.recordingActive) return ""
-      return root.service && root.service.paused ? "" : ""
-    }
+    text: root.service && root.service.paused ? "" : ""
     active: root.recordingActive
     tooltipText: {
       if (!root.service) return strings.t("tooltip.idle")
@@ -155,9 +181,22 @@ Panel {
             ? root.dim
             : root.urgent
 
+          Button {
+            id: settingsToggle
+            anchors.right: parent.right
+            anchors.top: parent.top
+            z: 1
+            iconText: ""
+            tooltipText: strings.t("panel.settings")
+            foreground: root.settingsOpen ? root.foreground : root.dim
+            fontFamily: root.fontFamily
+            onClicked: root.settingsOpen = !root.settingsOpen
+          }
+
           PanelHero {
             id: hero
-            width: parent.width
+            // Leave room for the cogwheel so a long title cannot run under it.
+            width: parent.width - settingsToggle.implicitWidth
             title: strings.t("panel.title")
             meta: {
               if (!root.service) return strings.t("panel.meta.starting")
@@ -174,10 +213,7 @@ Panel {
             iconComponent: Component {
               Text {
                 textFormat: Text.PlainText
-                text: {
-                  if (!root.recordingActive) return ""
-                  return root.service && root.service.paused ? "" : ""
-                }
+                text: root.service && root.service.paused ? "" : ""
                 color: heroHost.iconColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.display
@@ -216,6 +252,41 @@ Panel {
           text: root.service ? root.service.desktopStatus : ""
           textFormat: Text.PlainText
           color: root.service && !root.service.desktopHealthy ? root.urgent : root.dim
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        PanelSeparator {
+          foreground: root.foreground
+          visible: root.settingsOpen
+        }
+
+        PanelSectionHeader {
+          visible: root.settingsOpen
+          text: strings.t("panel.settings")
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+        }
+
+        Dropdown {
+          id: folderPicker
+          visible: root.settingsOpen
+          width: parent.width
+          label: strings.t("panel.recordingFolder")
+          value: root.effectiveRecordingDirectory
+          options: root.recordingDirectoryOptions
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          onChanged: function(value) { root.selectRecordingDirectory(value) }
+        }
+
+        Text {
+          visible: root.settingsOpen
+          width: parent.width
+          text: strings.t("panel.recordingFolderHint")
+          textFormat: Text.PlainText
+          color: root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption
           wrapMode: Text.WordWrap
